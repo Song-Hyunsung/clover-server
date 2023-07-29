@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const cors = require('cors')
 const app = express();
 const memberRoute = require("./routes/member");
+const botRoute = require('./routes/bot');
 
 let corsOptions = {
     origin : ['http://localhost:3000']
@@ -23,6 +24,8 @@ app.get("/health", (req, res) => {
     res.send("Server is online, DB readyState is " + mongoose.connection.readyState);
 })
 
-app.use("/member", memberRoute)
+app.use("/bot", botRoute);
+
+app.use("/member", memberRoute);
 
 app.listen(8080, () => console.log("Clover server running..."));
