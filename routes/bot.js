@@ -2,10 +2,12 @@ require("dotenv").config({path:"../.env"});
 const express = require("express");
 const startDiscordBot = require("../bot/clover-bot");
 const memberModel = require("../models/member");
+const riotHttpClient = require("../util/riot-http-client");
 
 let router = express.Router();
 let client;
 let upsertOperation = false;
+const KOREAN_REGEX = /[\u1100-\u11FF\u3130-\u318F\uA960-\uA97F\uAC00-\uD7AF\uD7B0-\uD7FF]/g;
 
 router.route("/start").get((req, res) => {
   if(!client){
@@ -26,11 +28,12 @@ router.route("/destroy").get((req, res) => {
   }
 });
 
-router.route("/upsert-members").get(async (req, res) => {
+router.route("/upsert-members").get(async (req, res, next) => {
   if(!client || upsertOperation){
     res.send("Discord bot is currently not running or upsert operation in process, unable to upsert members.");
   } else {
     try {
+      upsertOperation = true;
       const guild = client.guilds.cache.get(process.env.DISCORD_GUILD_ID);
       const membersObject = await guild.members.fetch();
       let count = 0;
@@ -56,7 +59,14 @@ router.route("/upsert-members").get(async (req, res) => {
           displayName = member.nickname;
           let displayNameSplit = displayName.split(" ");
           if(displayNameSplit.length > 2 && displayNameSplit[0] == "CR"){
-            inGameName = displayNameSplit[0] + " " + displayNameSplit[1];
+            for(let i = 0; i < displayNameSplit.length; i++){
+              if(!KOREAN_REGEX.test(displayNameSplit[i])){
+                inGameName = inGameName + displayNameSplit[i] + " ";
+              } else {
+                break;
+              }
+            }
+            inGameName = inGameName.trimEnd();
             isMember = true;
           }
         }
@@ -75,7 +85,7 @@ router.route("/upsert-members").get(async (req, res) => {
         }
 
         await memberModel.updateOne({
-          id: memberDTO._id
+          _id: memberDTO._id
         },{
           $set: {
             _id: memberDTO._id,
@@ -101,25 +111,81 @@ router.route("/upsert-members").get(async (req, res) => {
       
       console.log("Total: " + count + " member upserted to DB.");
       res.send("Total: " + count + " member upserted to DB.");
+      upsertOperation = false;
     } catch(e){
-      console.log("Error during discord bot upsert member operation.");
-      console.log(e);
+      console.log("Aborting entire upsert-member operation.");
+      next(e);
     }
   }
 });
 
-router.route("/upsert-tier").get(async (req, res) => {
-  memberList = await memberModel.find({
-    isMember: true
-  });
+router.route("/upsert-tier").get(async (req, res, next) => {
+  try {
+    if(upsertOperation){
+      res.send("Upsert operation is currently in progress.");
+    } else {
+      upsertOperation = true;
+      memberList = await memberModel.find({
+        isMember: true
+      });
+    
+      for(let member of memberList){
+        let operationFailed = false;
+        let summonerId = member.summonerId;
+        if(!summonerId){
+          await riotHttpClient.get(process.env.RIOT_BASE_URL + "/summoner/v4/summoners/by-name/" + member.inGameName).then(res => {
+            switch(res.status){
+              case 200:
+                summonerId = res.data.id;
+                break;
+              default:
+                console.log("by-name call with IGN: " + member.inGameName + ", Discord: " + member.tag + ", Unhandled Status: " + res.status);
+            }
+          }).catch(err => {
+            switch(err.response.status){
+              case 404:
+                console.log("by-name call with IGN: " + member.inGameName + ", Discord: " + member.tag + " does not exist.");
+                break;
+              default:
+                console.log("by-name call with IGN: " + member.inGameName + ", Discord: " + member.tag + " failed with following status: " + err.response.status);
+                next(err);
+                operationFailed = true;
+                break;
+            }
+          });
+      
+          if(summonerId){
+            await memberModel.updateOne({
+              _id: member._id
+            },{
+              $set: {
+                summonerId: summonerId
+              }
+            },{
+              upsert: true
+            }).then(() => {
+              console.log("SummonerId successfully updated for " + member.inGameName + ", Discord: " + member.tag);
+            }).catch(err => {
+              console.log("SummonerId DB update for IGN: " + member.inGameName + ", Discord: " + member.tag + " failed with following reason.");
+              next(err);
+              operationFailed = true;
+            });
 
-  memberList.every(member => {
-    if(!member.summonerId){
-
+            
+          }
+          
+          if(operationFailed){
+            console.log("Aborting entire upsert-tier operation.");
+            break;
+          }
+        }
+      };
+      upsertOperation = false;
     }
-    res.json(member);
-    return;
-  });
+  } catch(e) {
+    next(e);
+  }
+  res.send("Upsert tier operation is complete.");
 });
 
 module.exports = router

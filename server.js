@@ -28,4 +28,10 @@ app.use("/bot", botRoute);
 
 app.use("/member", memberRoute);
 
+// Default error handler
+app.use((err, req, res, next) => {
+  console.error(err.stack)
+  res.status(500).send('Something broke!')
+})
+
 app.listen(8080, () => console.log("Clover server running..."));
