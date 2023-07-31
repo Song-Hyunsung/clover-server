@@ -171,7 +171,39 @@ router.route("/upsert-tier").get(async (req, res, next) => {
               operationFailed = true;
             });
 
-            
+            // sample by-summoner
+            // [
+            //   {
+            //       "leagueId": "a2510933-b65f-4cbe-8e8d-f16acb25c499",
+            //       "queueType": "RANKED_FLEX_SR",
+            //       "tier": "PLATINUM",
+            //       "rank": "I",
+            //       "summonerId": "2LKs82O67uyRDBJDZVXUxDcJPYmwRtz4K32VX96ybAo55p8",
+            //       "summonerName": "13arkmore",
+            //       "leaguePoints": 44,
+            //       "wins": 5,
+            //       "losses": 4,
+            //       "veteran": false,
+            //       "inactive": false,
+            //       "freshBlood": true,
+            //       "hotStreak": true
+            //   },
+            //   {
+            //       "leagueId": "b3f08f6f-f2f4-4229-995e-69e5c65361bc",
+            //       "queueType": "RANKED_SOLO_5x5",
+            //       "tier": "GOLD",
+            //       "rank": "I",
+            //       "summonerId": "2LKs82O67uyRDBJDZVXUxDcJPYmwRtz4K32VX96ybAo55p8",
+            //       "summonerName": "13arkmore",
+            //       "leaguePoints": 80,
+            //       "wins": 1,
+            //       "losses": 4,
+            //       "veteran": false,
+            //       "inactive": false,
+            //       "freshBlood": true,
+            //       "hotStreak": false
+            //   }
+            // ]
           }
           
           if(operationFailed){
