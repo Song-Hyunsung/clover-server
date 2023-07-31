@@ -6,6 +6,8 @@ const memberSchema = new mongoose.Schema({
     name: String,
     roles: [String],
     tag: String,
+    inGameName: String,
+    isMember: Boolean,
     createdAt: Date,
     joinedAt: Date,
     updatedAt: Date
