@@ -5,6 +5,7 @@ const memberModel = require("../models/member");
 
 let router = express.Router();
 let client;
+let upsertOperation = false;
 
 router.route("/start").get((req, res) => {
   if(!client){
@@ -26,8 +27,8 @@ router.route("/destroy").get((req, res) => {
 });
 
 router.route("/upsert-members").get(async (req, res) => {
-  if(!client){
-    res.send("Discord bot is currently not running, unable to upsert members.");
+  if(!client || upsertOperation){
+    res.send("Discord bot is currently not running or upsert operation in process, unable to upsert members.");
   } else {
     try {
       const guild = client.guilds.cache.get(process.env.DISCORD_GUILD_ID);
@@ -105,6 +106,20 @@ router.route("/upsert-members").get(async (req, res) => {
       console.log(e);
     }
   }
+});
+
+router.route("/upsert-tier").get(async (req, res) => {
+  memberList = await memberModel.find({
+    isMember: true
+  });
+
+  memberList.every(member => {
+    if(!member.summonerId){
+
+    }
+    res.json(member);
+    return;
+  });
 });
 
 module.exports = router
