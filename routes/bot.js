@@ -170,54 +170,88 @@ router.route("/upsert-tier").get(async (req, res, next) => {
               next(err);
               operationFailed = true;
             });
-
-            // sample by-summoner
-            // [
-            //   {
-            //       "leagueId": "a2510933-b65f-4cbe-8e8d-f16acb25c499",
-            //       "queueType": "RANKED_FLEX_SR",
-            //       "tier": "PLATINUM",
-            //       "rank": "I",
-            //       "summonerId": "2LKs82O67uyRDBJDZVXUxDcJPYmwRtz4K32VX96ybAo55p8",
-            //       "summonerName": "13arkmore",
-            //       "leaguePoints": 44,
-            //       "wins": 5,
-            //       "losses": 4,
-            //       "veteran": false,
-            //       "inactive": false,
-            //       "freshBlood": true,
-            //       "hotStreak": true
-            //   },
-            //   {
-            //       "leagueId": "b3f08f6f-f2f4-4229-995e-69e5c65361bc",
-            //       "queueType": "RANKED_SOLO_5x5",
-            //       "tier": "GOLD",
-            //       "rank": "I",
-            //       "summonerId": "2LKs82O67uyRDBJDZVXUxDcJPYmwRtz4K32VX96ybAo55p8",
-            //       "summonerName": "13arkmore",
-            //       "leaguePoints": 80,
-            //       "wins": 1,
-            //       "losses": 4,
-            //       "veteran": false,
-            //       "inactive": false,
-            //       "freshBlood": true,
-            //       "hotStreak": false
-            //   }
-            // ]
           }
           
           if(operationFailed){
-            console.log("Aborting entire upsert-tier operation.");
+            console.log("Aborting entire upsert-tier operation during summonerId update.");
+            break;
+          }
+        }
+
+        let rankInfoObj = {};
+
+        if(summonerId){
+          await riotHttpClient.get(process.env.RIOT_BASE_URL + "/league/v4/entries/by-summoner/" + summonerId).then(res => {
+            switch(res.status){
+              case 200:
+                if(res.data && res.data.length > 0){
+                  res.data.forEach(rankInfo => {
+                    // CHERRY is ARENA queueType, currently bugged and doesn't have tier and rank info in the API
+                    if(rankInfo.queueType != 'CHERRY'){
+                      rankInfoObj[rankInfo.queueType] = {
+                        tier: rankInfo.tier,
+                        rank: rankInfo.rank,
+                        updatedAt: new Date()
+                      }
+                    }
+                  })
+                }
+                break;
+              default:
+                console.log("by-summoner call with IGN: " + member.inGameName + ", Discord: " + member.tag + ", Unhandled Status: " + res.status);
+            }
+          }).catch(err => {
+            switch(err.response.status){
+              case 404:
+                console.log("by-summoner call with IGN: " + member.inGameName + ", Discord: " + member.tag + " does not exist.");
+                break;
+              default:
+                console.log("by-summoner call with IGN: " + member.inGameName + ", Discord: " + member.tag + " failed with following status: " + err.response.status);
+                next(err);
+                operationFailed = true;
+                break;
+            }
+          });
+
+          if(rankInfoObj){
+            let rankInfoDTO = member.ranks;
+            if(rankInfoDTO){
+              let newRankInfoKeys = Object.keys(rankInfoObj);
+              newRankInfoKeys.forEach(key => {
+                rankInfoDTO[key] = rankInfoObj[key];
+              });
+            } else {
+              rankInfoDTO = rankInfoObj;
+            }
+            await memberModel.updateOne({
+              _id: member._id
+            },{
+              $set: {
+                ranks: rankInfoDTO
+              }
+            },{
+              upsert: true
+            }).then(() => {
+              console.log("Ranks successfully updated for " + member.inGameName + ", Discord: " + member.tag);
+            }).catch(err => {
+              console.log("Ranks DB update for IGN: " + member.inGameName + ", Discord: " + member.tag + " failed with following reason.");
+              next(err);
+              operationFailed = true;
+            });
+          }
+  
+          if(operationFailed){
+            console.log("Aborting entire upsert-tier operation during rank-tier update.");
             break;
           }
         }
       };
+      res.send("Upsert tier operation is complete.");
       upsertOperation = false;
     }
   } catch(e) {
     next(e);
   }
-  res.send("Upsert tier operation is complete.");
 });
 
 module.exports = router

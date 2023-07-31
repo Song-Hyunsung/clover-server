@@ -9,7 +9,7 @@ const memberSchema = new mongoose.Schema({
   inGameName: String,
   isMember: Boolean,
   summonerId: String,
-  ranks: [String],
+  ranks: Object,
   createdAt: Date,
   joinedAt: Date,
   updatedAt: Date
