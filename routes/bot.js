@@ -191,6 +191,9 @@ router.route("/upsert-tier").get(async (req, res, next) => {
                       rankInfoObj[rankInfo.queueType] = {
                         tier: rankInfo.tier,
                         rank: rankInfo.rank,
+                        leaguePoints: rankInfo.leaguePoints,
+                        wins: rankInfo.wins,
+                        losses: rankInfo.losses,
                         updatedAt: new Date()
                       }
                     }
@@ -246,6 +249,7 @@ router.route("/upsert-tier").get(async (req, res, next) => {
           }
         }
       };
+      console.log("Upsert tier operation is complete.");
       res.send("Upsert tier operation is complete.");
       upsertOperation = false;
     }
