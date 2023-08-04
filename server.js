@@ -12,6 +12,8 @@ let corsOptions = {
 
 app.use(cors(corsOptions));
 
+console.log(process.env.MONGODB_URL);
+
 mongoose.connect(
   process.env.MONGODB_URL,
   {
