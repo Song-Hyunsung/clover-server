@@ -101,7 +101,7 @@ router.route("/upsert-members").get(async (req, res, next) => {
 
       let inactiveMemberList = [];
       let oldActiveMemberList = await memberModel.find({
-        isMember: true
+        active: true
       },{
         _id: 1
       })
@@ -117,7 +117,7 @@ router.route("/upsert-members").get(async (req, res, next) => {
           _id: inactiveMemberId
         },{
           $set: {
-            isMember: false
+            active: false
           }
         })
 
