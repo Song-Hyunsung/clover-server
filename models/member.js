@@ -1,7 +1,7 @@
 const mongoose = require("mongoose")
 
 const memberSchema = new mongoose.Schema({
-  _id: Number,
+  _id: String,
   displayName: String,
   name: String,
   roles: [String],
@@ -9,6 +9,7 @@ const memberSchema = new mongoose.Schema({
   inGameName: String,
   isMember: Boolean,
   summonerId: String,
+  acative: Boolean,
   ranks: Object,
   createdAt: Date,
   joinedAt: Date,
