@@ -38,6 +38,7 @@ router.route("/upsert-members").get(async (req, res, next) => {
       const membersObject = await guild.members.fetch();
       let count = 0;
       let members = [];
+      let activeMemberMap = {};
 
       // guild.members.fetch() returns weird format that wraps into array of two element [id, GuildMember] when using for..of
       // iterating through with forEach only saves GuildMember object, so using it to unwrap the response before for..of
@@ -70,34 +71,23 @@ router.route("/upsert-members").get(async (req, res, next) => {
             isMember = true;
           }
         }
-
-        const memberDTO = {
-          _id: member.user.id,
-          displayName: displayName,
-          name: member.user.username,
-          roles: roles,
-          tag: member.user.tag,
-          inGameName: inGameName,
-          isMember: isMember,
-          createdAt: member.user.createdAt,
-          joinedAt: member.joinedAt,
-          updatedAt: new Date()
-        }
+        activeMemberMap[member.user.id] = true;
 
         await memberModel.updateOne({
-          _id: memberDTO._id
+          _id: member.user.id
         },{
           $set: {
-            _id: memberDTO._id,
-            displayName: memberDTO.displayName,
-            name: memberDTO.name,
-            roles: memberDTO.roles,
-            tag: memberDTO.tag,
-            inGameName: memberDTO.inGameName,
-            isMember: memberDTO.isMember,
-            createdAt: memberDTO.createdAt,
-            joinedAt: memberDTO.joinedAt,
-            updatedAt: memberDTO.updatedAt
+            _id: member.user.id,
+            displayName: displayName,
+            name: member.user.username,
+            roles: roles,
+            tag: member.user.tag,
+            inGameName: inGameName,
+            isMember: isMember,
+            active: true,
+            createdAt: member.user.createdAt,
+            joinedAt: member.joinedAt,
+            updatedAt: new Date()
           }
         },{
           upsert: true
@@ -108,7 +98,32 @@ router.route("/upsert-members").get(async (req, res, next) => {
           }
         })
       }
-      
+
+      let inactiveMemberList = [];
+      let oldActiveMemberList = await memberModel.find({
+        active: true
+      },{
+        _id: 1
+      })
+
+      oldActiveMemberList.forEach(member => {
+        if(!(member._id in activeMemberMap)){
+          inactiveMemberList.push(member._id);
+        }
+      })
+
+      for(let inactiveMemberId of inactiveMemberList){
+        await memberModel.updateOne({
+          _id: inactiveMemberId
+        },{
+          $set: {
+            active: false
+          }
+        })
+
+        console.log("UserID: " + inactiveMemberId + " is now inactive.");
+      }
+
       console.log("Total: " + count + " member upserted to DB.");
       res.send("Total: " + count + " member upserted to DB.");
       upsertOperation = false;
