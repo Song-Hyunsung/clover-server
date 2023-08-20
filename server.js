@@ -5,6 +5,7 @@ const cors = require('cors')
 const app = express();
 const memberRoute = require("./routes/member");
 const botRoute = require('./routes/bot');
+const authRoute = require('./routes/auth');
 
 app.use(cors());
 
@@ -23,6 +24,8 @@ app.get("/health", (req, res) => {
 app.use("/bot", botRoute);
 
 app.use("/member", memberRoute);
+
+app.use("/auth", authRoute);
 
 // Default error handler
 app.use((err, req, res, next) => {
