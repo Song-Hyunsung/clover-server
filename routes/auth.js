@@ -4,13 +4,12 @@ const axios = require("axios");
 
 let router = express.Router();
 
-router.route("/auth-check").get((req, res, next) => {
-  // TODO - check session here, for now it will be based on query param for dev
-  if(req.query.loggedIn){
-    res.status(200);
-  } else {
-    res.status(401);
-  }
+router.route("/check").get((req, res, next) => {
+  res.status(401).send("you are not logged in");
+})
+
+router.route("/check-200").get((req, res, next) => {
+  res.status(200).send("you are logged in");
 })
 
 router.route("/redirect").get((req, res, next) => {
