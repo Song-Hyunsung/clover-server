@@ -1,4 +1,5 @@
 require("dotenv").config({path:"../.env"});
+
 const axios = require("axios").create({
   headers: {
     "X-Riot-Token": process.env.RIOT_API_KEY

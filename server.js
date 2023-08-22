@@ -2,11 +2,20 @@ require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require('cors')
+const cookieParser = require("cookie-parser");
 const app = express();
 const memberRoute = require("./routes/member");
 const botRoute = require('./routes/bot');
+const authRoute = require('./routes/auth');
 
-app.use(cors());
+const corsOriginList = process.env.ALLOWED_ORIGINS.split(",");
+
+app.use(cors({
+  origin: corsOriginList,
+  credentials: true 
+}));
+
+app.use(cookieParser());
 
 mongoose.connect(
   process.env.MONGODB_URL,
@@ -24,10 +33,15 @@ app.use("/bot", botRoute);
 
 app.use("/member", memberRoute);
 
+app.use("/auth", authRoute);
+
 // Default error handler
 app.use((err, req, res, next) => {
-  console.error(err.stack)
-  res.status(500).send('Something broke!')
+  if(err && err.response && err.response.status && err.response.data){
+    res.status(err.response.status).send("Error reason: " + err.response.data.error);
+  } else {
+    res.status(500).send("Something broke");
+  }
 })
 
 app.listen(process.env.PORT || 8080, () => console.log("Clover server running..."));
