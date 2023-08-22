@@ -24,7 +24,7 @@ router.route("/authenticate").get(async (req, res, next) => {
         client_secret: process.env.DISCORD_CLIENT_SECRET,
         code: req.query.code,
         grant_type: 'authorization_code',
-        redirect_uri: "http://localhost:3000/login/redirect",
+        redirect_uri: process.env.DISCORD_OAUTH2_REDIRECT_URI,
         scope: 'identify'
       },
       {
