@@ -2,8 +2,10 @@ const express = require("express");
 const memberModel = require("../models/member")
 
 let router = express.Router();
+const middleware = require('../middleware/authenticateToken');
 
-router.route("/").get(async (req, res) => {
+router.route("/").get(middleware.authenticateToken, async (req, res) => {
+  console.log("Member endpoint invoked by user: " + req.token.name + " at time: " + new Date());
   memberList = await memberModel.find({});
   memberListDTO = [];
 

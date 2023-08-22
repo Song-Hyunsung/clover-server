@@ -1,16 +1,13 @@
 require("dotenv").config({path:"../.env"});
 const express = require("express");
 const axios = require("axios");
-const jwt = require('jsonwebtoken')
+const jwt = require('jsonwebtoken');
+const middleware = require('../middleware/authenticateToken');
 
 let router = express.Router();
 
-router.route("/check").get((req, res, next) => {
-  res.status(401).send("you are not logged in");
-})
-
-router.route("/check-200").get((req, res, next) => {
-  res.status(200).send("you are logged in");
+router.route("/check").get(middleware.authenticateToken, (req, res, next) => {
+  res.status(200).send("You are authenticated.");
 })
 
 router.route("/authenticate").get(async (req, res, next) => {
