@@ -1,6 +1,7 @@
 require("dotenv").config({path:"../.env"});
 const express = require("express");
 const axios = require("axios");
+const jwt = require('jsonwebtoken')
 
 let router = express.Router();
 
@@ -55,11 +56,22 @@ router.route("/authenticate").get(async (req, res, next) => {
                 break;
               }
             }
-          }
-          if(isAdmin){
-            res.status(200).send("Admin confirmed, set session");
-          } else {
-            res.status(403).send("This user is not an admin, unauthorized access");
+            if(isAdmin){
+              // TODO - create JWT here and pass back
+              const jwtPayload = {
+                name: nick,
+              }
+              const accessToken = jwt.sign(jwtPayload, process.env.JWT_TOKEN_SECRET_KEY, { expiresIn: '30d'});
+              console.log("Access token has been created and will be included in the response as AUTH_JWT cookie");
+              res.cookie("AUTH_JWT", accessToken, {
+                secure: process.env.NODE_ENV !== "DEV",
+                httpOnly: true,
+                expires: new Date(Date.now() + 2592000000),
+              })
+              res.status(200).send("Admin confirmed, access token is set");
+            } else {
+              res.status(403).send("This user is not an admin, unauthorized access");
+            }
           }
         } catch(e){
           console.error(e);

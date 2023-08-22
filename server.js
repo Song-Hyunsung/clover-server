@@ -7,7 +7,10 @@ const memberRoute = require("./routes/member");
 const botRoute = require('./routes/bot');
 const authRoute = require('./routes/auth');
 
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:3000'],
+  credentials: true 
+}));
 
 mongoose.connect(
   process.env.MONGODB_URL,
