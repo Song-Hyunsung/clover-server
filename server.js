@@ -8,8 +8,10 @@ const memberRoute = require("./routes/member");
 const botRoute = require('./routes/bot');
 const authRoute = require('./routes/auth');
 
+const corsOriginList = process.env.ALLOWED_ORIGINS.split(",");
+
 app.use(cors({
-  origin: ['http://localhost:3000'],
+  origin: corsOriginList,
   credentials: true 
 }));
 
