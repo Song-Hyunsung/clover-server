@@ -59,14 +59,20 @@ router.route("/authenticate").get(async (req, res, next) => {
                 name: nick,
               }
               const accessToken = jwt.sign(jwtPayload, process.env.JWT_TOKEN_SECRET_KEY, { expiresIn: '30d'});
-              console.log("Access token has been created and will be included in the response as AUTH_JWT cookie");
-              res.cookie("AUTH_JWT", accessToken, {
-                secure: process.env.NODE_ENV !== "DEV",
-                httpOnly: true,
-                expires: new Date(Date.now() + 2592000000),
-              })
+              console.log("Access token has been created and will be included in the response as AUTH_JWT header");
+              console.log("Nickname of this user: " + nick + " and IP: " + req.ip);
+              // ideally you will want this cookie, but because server and ui is on different domain (free tier limitation) cookie cannot be used in this case...
+              // res.cookie("AUTH_JWT", accessToken, {
+              //   secure: process.env.NODE_ENV !== "DEV",
+              //   httpOnly: true,
+              //   expires: new Date(Date.now() + 2592000000),
+              // })
+              res.set("AUTH_JWT", accessToken);
+              res.set("Access-Control-Expose-Headers", "AUTH_JWT");
               res.status(200).send("Admin confirmed, access token is set");
             } else {
+              console.log("User who is not admin was trying to access the site, AUTH_JWT header was not created");
+              console.log("Nickname of this user: " + nick + " and IP: " + req.ip);
               res.status(403).send("This user is not an admin, unauthorized access");
             }
           }
