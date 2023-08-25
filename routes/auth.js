@@ -13,8 +13,6 @@ router.route("/check").get(middleware.authenticateToken, (req, res, next) => {
 router.route("/authenticate").get(async (req, res, next) => {
   const ADMIN_ROLE = "721906462749884427";
   let isAdmin = false;
-  console.log(`The authorization code is: ${req.query.code}`);
-  console.log("Now calling discord with authorization code for access token");
 
   if(req.query.code){
     try {
@@ -32,8 +30,6 @@ router.route("/authenticate").get(async (req, res, next) => {
           "Content-Type": 'application/x-www-form-urlencoded'
         }
       })
-
-      console.log("Now calling discord with access token for user data");
 
       if(tokenResponse.data && tokenResponse.data.access_token){
         try {
