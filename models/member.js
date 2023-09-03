@@ -10,7 +10,10 @@ const memberSchema = new mongoose.Schema({
   isMember: Boolean,
   summonerId: String,
   active: Boolean,
+  // TODO - this should be typed...
   ranks: Object,
+  // TODO - this too...
+  note: Object,
   createdAt: Date,
   joinedAt: Date,
   updatedAt: Date
