@@ -39,7 +39,6 @@ router.route("/")
   if(req.token){
     console.log("POST Member endpoint invoked by user: " + req.token.name + " at time: " + new Date());
     try {
-      // TODO - check input has correct fields (typing in models/member.js)
       await memberModel.updateOne({
         _id: req.body.id
       },{
