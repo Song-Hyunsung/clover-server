@@ -50,13 +50,12 @@ router.route("/authenticate").get(async (req, res, next) => {
               }
             }
             if(isAdmin){
-              // TODO - create JWT here and pass back
               const jwtPayload = {
                 name: nick,
               }
               const accessToken = jwt.sign(jwtPayload, process.env.JWT_TOKEN_SECRET_KEY, { expiresIn: '30d'});
               console.log("Access token has been created and will be included in the response as AUTH_JWT header");
-              console.log("Nickname of this user: " + nick + " and IP: " + req.ip);
+              console.log("Nickname of this user: " + nick);
               // ideally you will want this cookie, but because server and ui is on different domain (free tier limitation) cookie cannot be used in this case...
               // res.cookie("AUTH_JWT", accessToken, {
               //   secure: process.env.NODE_ENV !== "DEV",
@@ -68,18 +67,17 @@ router.route("/authenticate").get(async (req, res, next) => {
               res.status(200).send("Admin confirmed, access token is set");
             } else {
               console.log("User who is not admin was trying to access the site, AUTH_JWT header was not created");
-              console.log("Nickname of this user: " + nick + " and IP: " + req.ip);
+              console.log("Nickname of this user: " + nick);
               res.status(403).send("This user is not an admin, unauthorized access");
             }
           }
         } catch(e){
-          console.error(e);
+          e.trace = "Access token exchange";
           next(e);
         }
       }
     } catch(e){
-      // TODO - pass status and error message from axios to handler
-      console.error(e);
+      e.trace = "Authorization code exchange";
       next(e);
     }
   } else {

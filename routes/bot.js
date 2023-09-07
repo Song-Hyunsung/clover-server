@@ -129,6 +129,7 @@ router.route("/upsert-members").get(async (req, res, next) => {
       upsertOperation = false;
     } catch(e){
       console.log("Aborting entire upsert-member operation.");
+      e.trace = "Upsert-member operation";
       next(e);
     }
   }
@@ -269,6 +270,7 @@ router.route("/upsert-tier").get(async (req, res, next) => {
       upsertOperation = false;
     }
   } catch(e) {
+    e.trace = "Upsert-tier operation";
     next(e);
   }
 });

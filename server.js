@@ -39,7 +39,11 @@ app.use("/auth", authRoute);
 // Default error handler
 app.use((err, req, res, next) => {
   if(err && err.response && err.response.status && err.response.data){
-    res.status(err.response.status).send("Error reason: " + err.response.data.error);
+    if(err.trace){
+      res.status(err.response.status).send("Error reason: " + err.response.data.error + "\n" + "Trace: " + err.trace);
+    } else {
+      res.status(err.response.status).send("Error reason: " + err.response.data.error);
+    }
   } else {
     res.status(500).send("Something broke");
   }
