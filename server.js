@@ -7,6 +7,7 @@ const app = express();
 const memberRoute = require("./routes/member");
 const botRoute = require('./routes/bot');
 const authRoute = require('./routes/auth');
+const applicationRoute = require('./routes/application');
 
 const corsOriginList = process.env.ALLOWED_ORIGINS.split(",");
 
@@ -35,6 +36,8 @@ app.use("/bot", botRoute);
 app.use("/member", memberRoute);
 
 app.use("/auth", authRoute);
+
+app.use("/application", applicationRoute);
 
 // Default error handler
 app.use((err, req, res, next) => {
