@@ -9,12 +9,17 @@ router.route("/")
 })
 .post(async (req, res) => {
   try {
+    let timeNow = new Date();
+
     let application = new applicationModel({
       inGameName: req.body.inGameName,
       realName: req.body.realName,
       dateOfBirth: req.body.dateOfBirth,
-      note : req.body.note
-    })
+      note : req.body.note,
+      dataTransferred: false,
+      createdAt: timeNow,
+      updatedAt: timeNow
+    });
 
     await application.save();
 
