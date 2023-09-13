@@ -2,6 +2,7 @@ require("dotenv").config({path:"../.env"});
 const express = require("express");
 const startDiscordBot = require("../bot/clover-bot");
 const memberModel = require("../models/member");
+const applicationModel = require("../models/application");
 const riotHttpClient = require("../util/riot-http-client");
 // TODO - impl db call through document when applicable
 let router = express.Router();
@@ -48,14 +49,21 @@ router.route("/upsert-members").get(async (req, res, next) => {
 
       for(const member of members){
         const roles = [];
+        let memberType = "GUEST";
 
         member.roles.cache.forEach(role => {
           roles.push(role.name);
+          if(role.name === "신입"){
+            memberType = "NEW";
+          }
+          if(role.name === "정멤" || role.name === "CR 운영진" || role.name === "장기 잠수"){
+            memberType = "MEMBER";
+          }
         });
 
         let inGameName = "";
-        let isMember = false;
         let displayName = member.user.username;
+        let hasCRPrefix = false;
         if(member.nickname != null){
           displayName = member.nickname;
           let displayNameSplit = displayName.split(" ");
@@ -67,8 +75,8 @@ router.route("/upsert-members").get(async (req, res, next) => {
                 break;
               }
             }
+            hasCRPrefix = true;
             inGameName = inGameName.trimEnd();
-            isMember = true;
           }
         }
         activeMemberMap[member.user.id] = true;
@@ -83,7 +91,8 @@ router.route("/upsert-members").get(async (req, res, next) => {
             roles: roles,
             tag: member.user.tag,
             inGameName: inGameName,
-            isMember: isMember,
+            memberType: memberType,
+            hasCRPrefix: hasCRPrefix,
             active: true,
             createdAt: member.user.createdAt,
             joinedAt: member.joinedAt,
@@ -135,6 +144,27 @@ router.route("/upsert-members").get(async (req, res, next) => {
   }
 });
 
+router.route("/application-match").get(async (req, res, next) => {
+  try {
+    if(upsertOperation){
+      res.send("Upsert operation is currently in progress.");
+    } else {
+      let unmatchedApplicationList = await applicationModel.find({
+        dataTransferred: false
+      },{
+        note: 1,
+        inGameName: 1
+      });
+
+      console.log(unmatchedApplicationList);
+    }
+  } catch(e){
+    console.log("Aborting application match operation.");
+    e.trace = "Application match operation";
+    next(e);
+  }
+})
+
 router.route("/upsert-tier").get(async (req, res, next) => {
   try {
     if(upsertOperation){
@@ -142,7 +172,7 @@ router.route("/upsert-tier").get(async (req, res, next) => {
     } else {
       upsertOperation = true;
       memberList = await memberModel.find({
-        isMember: true
+        hasCRPrefix: true
       });
     
       for(let member of memberList){
