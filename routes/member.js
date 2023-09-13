@@ -3,7 +3,7 @@ const memberModel = require("../models/member")
 
 let router = express.Router();
 const middleware = require('../middleware/authenticateToken');
-
+// TODO - impl db call through document when applicable
 router.route("/")
 .get(middleware.authenticateToken, async (req, res) => {
   if(req.token){

@@ -3,7 +3,7 @@ const express = require("express");
 const startDiscordBot = require("../bot/clover-bot");
 const memberModel = require("../models/member");
 const riotHttpClient = require("../util/riot-http-client");
-
+// TODO - impl db call through document when applicable
 let router = express.Router();
 let client;
 let upsertOperation = false;
