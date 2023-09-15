@@ -156,7 +156,50 @@ router.route("/application-match").get(async (req, res, next) => {
         inGameName: 1
       });
 
-      console.log(unmatchedApplicationList);
+      if(unmatchedApplicationList.length > 0){
+        let newMemberTypeList = await memberModel.find({
+          memberType: "NEW"
+        },{
+          _id: 1,
+          displayName: 1
+        });
+  
+        for(let applicant of unmatchedApplicationList){
+          applicant.inGameName = applicant.inGameName.toLowerCase().replace('/\s/g', "");
+        }
+  
+        for(let newMember of newMemberTypeList){
+          for(let applicant of unmatchedApplicationList){
+            let displayMatchString = newMember.displayName.toLowerCase().replace('/\s/g', "");
+  
+            if(displayMatchString.includes(applicant.inGameName)){
+              let currentDate = new Date();
+  
+              await memberModel.updateOne({
+                _id: newMember._id
+              },{
+                $set: {
+                  note: applicant.note,
+                  updatedAt: currentDate
+                }
+              });
+  
+              await applicationModel.updateOne({
+                _id: applicant._id
+              },{
+                $set: {
+                  dataTransferred: true,
+                  updatedAt: currentDate
+                }
+              });
+  
+              console.log("Applicant: " + applicant.inGameName + " had matching discord profile and was updated with application information.");
+            }
+          }
+        }
+      }
+      
+      res.status(200).send("Application matching complete.");
     }
   } catch(e){
     console.log("Aborting application match operation.");
