@@ -214,6 +214,7 @@ router.route("/upsert-tier").get(async (req, res, next) => {
       res.send("Upsert operation is currently in progress.");
     } else {
       upsertOperation = true;
+      res.send("Upsert tier operation started.");
       memberList = await memberModel.find({
         hasCRPrefix: true
       });
@@ -339,7 +340,6 @@ router.route("/upsert-tier").get(async (req, res, next) => {
         }
       };
       console.log("Upsert tier operation is complete.");
-      res.send("Upsert tier operation is complete.");
       upsertOperation = false;
     }
   } catch(e) {
