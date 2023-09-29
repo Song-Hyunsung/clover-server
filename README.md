@@ -1,6 +1,8 @@
 # Clover Backend Server
 Clover backend server is simple, lightweight node.js server using express.js framework to interconnect Discord and League of Legend account information into one place.
 
+![image](https://github.com/Song-Hyunsung/clover-server/assets/36865751/b3ed81ad-9797-4047-b238-c8319e3420ff)
+
 ## Basic functionalities of Clover server
 - Turn on/off Clover Management Discord Bot (integrated within the server using discord.js).
 - Get every member information from Clover Discord via Bot and upsert records into database.
