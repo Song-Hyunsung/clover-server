@@ -227,6 +227,8 @@ router.route("/upsert-tier").get(async (req, res, next) => {
             switch(res.status){
               case 200:
                 summonerId = res.data.id;
+                riotAccountId = res.data.accountId;
+                riotPUUID = res.data.puuid;
                 break;
               default:
                 console.log("by-name call with IGN: " + member.inGameName + ", Discord: " + member.tag + ", Unhandled Status: " + res.status);
@@ -249,7 +251,9 @@ router.route("/upsert-tier").get(async (req, res, next) => {
               _id: member._id
             },{
               $set: {
-                summonerId: summonerId
+                summonerId: summonerId,
+                riotAccountId: riotAccountId,
+                riotPUUID: riotPUUID
               }
             },{
               upsert: true
