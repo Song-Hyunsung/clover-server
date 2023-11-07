@@ -10,6 +10,8 @@ const memberSchema = new mongoose.Schema({
   memberType: String,
   hasCRPrefix: Boolean,
   summonerId: String,
+  riotAccountId: String,
+  riotPUUID: String,
   active: Boolean,
   ranks: Object,
   note: {
