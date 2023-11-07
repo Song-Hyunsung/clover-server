@@ -222,7 +222,9 @@ router.route("/upsert-tier").get(async (req, res, next) => {
       for(let member of memberList){
         let operationFailed = false;
         let summonerId = member.summonerId;
-        if(!summonerId){
+        let riotAccountId = member.riotAccountId;
+        let riotPUUID = member.PUUID;
+        if(!summonerId || !riotAccountId || !riotPUUID){
           await riotHttpClient.get(process.env.RIOT_BASE_URL + "/summoner/v4/summoners/by-name/" + member.inGameName).then(res => {
             switch(res.status){
               case 200:
