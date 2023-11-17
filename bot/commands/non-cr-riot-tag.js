@@ -8,6 +8,7 @@ module.exports = {
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .setDMPermission(false),
   async execute(interaction) {
+    await interaction.deferReply();
     let memberList = await memberModel.find({
       $and: [
         { riotGameName: {$exists : true}},
@@ -25,7 +26,6 @@ module.exports = {
     for(let member of memberList){
       replyString += member.displayName + " (" + member.riotGameName + "#" + member.riotTagLine + ")\n"
     }
-    await interaction.deferReply();
     interaction.editReply(replyString);
   },
 };
