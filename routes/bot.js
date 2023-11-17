@@ -354,4 +354,79 @@ router.route("/upsert-tier").get(async (req, res, next) => {
   }
 });
 
+router.route("/upsert-account-info").get(async (req, res, next) => {
+  try {
+    if(upsertOperation){
+      res.send("Upsert operation is currently in progress.");
+    } else {
+      upsertOperation = true;
+      res.send("Upsert account info operation started.");
+      memberList = await memberModel.find({
+        riotPUUID: {$exists : true}
+      },{
+        riotPUUID: 1
+      });
+    
+      for(let member of memberList){
+        let operationFailed = false;
+        let riotPUUID = member.riotPUUID;
+        let gameName = "";
+        let tagLine = "";
+        if(riotPUUID){
+          await riotHttpClient.get(process.env.RIOT_ACCOUNT_BASE_URL + "/account/v1/accounts/by-puuid/" + member.riotPUUID).then(res => {
+            switch(res.status){
+              case 200:
+                gameName = res.data.gameName;
+                tagLine = res.data.tagLine;
+                break;
+              default:
+                console.log("by-puuid call with PUUID: " + member.PUUID + ", Unhandled Status: " + res.status);
+            }
+          }).catch(err => {
+            switch(err.response.status){
+              case 404:
+                console.log("by-puuid call with PUUID: " + member.PUUID + " does not exist.");
+                break;
+              default:
+                console.log("by-puuid call with IGN: " + member.PUUID + " failed with following status: " + err.response.status);
+                next(err);
+                operationFailed = true;
+                break;
+            }
+          });
+      
+          if(gameName && tagLine){
+            await memberModel.updateOne({
+              _id: member._id
+            },{
+              $set: {
+                riotGameName: gameName,
+                riotTagLine: tagLine,
+              }
+            },{
+              upsert: true
+            }).then(() => {
+              console.log("Riot gameName and tagLine successfully updated for " + gameName);
+            }).catch(err => {
+              console.log("Riot Account Info DB update for GameName: " + gameName + " failed with following reason.");
+              next(err);
+              operationFailed = true;
+            });
+          }
+          
+          if(operationFailed){
+            console.log("Aborting entire upsert-account info operation during summonerId update.");
+            break;
+          }
+        }
+      }
+      console.log("Upsert account info operation is complete.");
+      upsertOperation = false;
+    }
+  } catch(e) {
+    e.trace = "Upsert-account info operation";
+    next(e);
+  }
+});
+
 module.exports = router
