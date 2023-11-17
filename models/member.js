@@ -12,6 +12,8 @@ const memberSchema = new mongoose.Schema({
   summonerId: String,
   riotAccountId: String,
   riotPUUID: String,
+  riotGameName: String,
+  riotTagLine: String,
   active: Boolean,
   ranks: Object,
   note: {
