@@ -25,6 +25,7 @@ module.exports = {
     for(let member of memberList){
       replyString += member.displayName + " (" + member.riotGameName + "#" + member.riotTagLine + ")\n"
     }
-    await interaction.reply(`${replyString}`);
+    await interaction.deferReply();
+    interaction.editReply(replyString);
   },
 };
