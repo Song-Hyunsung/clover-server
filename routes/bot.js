@@ -61,22 +61,16 @@ router.route("/upsert-members").get(async (req, res, next) => {
           }
         });
 
-        let inGameName = "";
         let displayName = member.user.username;
-        let hasCRPrefix = false;
+        let riotGameName = "";
         if(member.nickname != null){
           displayName = member.nickname;
           let displayNameSplit = displayName.split(" ");
-          if(displayNameSplit.length > 2 && displayNameSplit[0] == "CR"){
-            for(let i = 0; i < displayNameSplit.length; i++){
-              if(!KOREAN_REGEX.test(displayNameSplit[i])){
-                inGameName = inGameName + displayNameSplit[i] + " ";
-              } else {
-                break;
-              }
+          if(displayNameSplit.length > 3 && (memberType === "NEW" || memberType === "MEMBER")){
+            for(let i = 1; i < displayNameSplit.length-2; i++){
+              riotGameName = riotGameName + " " + displayNameSplit[i];
             }
-            hasCRPrefix = true;
-            inGameName = inGameName.trimEnd();
+            riotGameName = riotGameName.trim()
           }
         }
         activeMemberMap[member.user.id] = true;
@@ -90,9 +84,8 @@ router.route("/upsert-members").get(async (req, res, next) => {
             name: member.user.username,
             roles: roles,
             tag: member.user.tag,
-            inGameName: inGameName,
             memberType: memberType,
-            hasCRPrefix: hasCRPrefix,
+            riotGameName: riotGameName,
             active: true,
             createdAt: member.user.createdAt,
             joinedAt: member.joinedAt,

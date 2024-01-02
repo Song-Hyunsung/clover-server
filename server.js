@@ -48,6 +48,7 @@ app.use((err, req, res, next) => {
       res.status(err.response.status).send("Error reason: " + err.response.data.error);
     }
   } else {
+    console.log(err);
     res.status(500).send("Something broke");
   }
 })
