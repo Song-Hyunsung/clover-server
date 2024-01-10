@@ -137,66 +137,108 @@ router.route("/upsert-members").get(async (req, res, next) => {
   }
 });
 
-router.route("/application-match").get(async (req, res, next) => {
+router.route("/upsert-riot-identifiers").get(async (req, res, next) => {
   try {
     if(upsertOperation){
       res.send("Upsert operation is currently in progress.");
     } else {
-      let unmatchedApplicationList = await applicationModel.find({
-        dataTransferred: false
-      },{
-        note: 1,
-        inGameName: 1
+      upsertOperation = true;
+      res.send("Upsert riot identifiers operation started.");
+      memberList = await memberModel.find({
+        active: true,
+        memberType: "MEMBER",
+        riotPUUID: {$exists: false}
       });
 
-      if(unmatchedApplicationList.length > 0){
-        let newMemberTypeList = await memberModel.find({
-          memberType: "NEW"
-        },{
-          _id: 1,
-          displayName: 1
-        });
-  
-        for(let applicant of unmatchedApplicationList){
-          applicant.inGameName = applicant.inGameName.toLowerCase().replace('/\s/g', "");
-        }
-  
-        for(let newMember of newMemberTypeList){
-          for(let applicant of unmatchedApplicationList){
-            let displayMatchString = newMember.displayName.toLowerCase().replace('/\s/g', "");
-  
-            if(displayMatchString.includes(applicant.inGameName)){
-              let currentDate = new Date();
-  
+      for(let member of memberList){
+        if(member.riotGameName){
+          let operationFailed = false;
+          let riotPUUID = "";
+          await riotHttpClient.get(process.env.RIOT_ACCOUNT_BASE_URL + "/account/v1/accounts/by-riot-id/" + member.riotGameName + "/클로버").then(res => {
+            switch(res.status){
+              case 200:
+                riotPUUID = res.data.puuid;
+                break;
+              default:
+                console.log("by-riot-id call with RiotID: " + member.riotGameName + ", Unhandled Status: " + res.status);
+            }
+          }).catch(err => {
+            switch(err.response.status){
+              case 404:
+                console.log("by-riot-id  call with RiotID: " + member.riotGameName + " does not exist.");
+                break;
+              default:
+                console.log("by-riot-id  call with RiotID: " + member.riotGameName + " failed with following status: " + err.response.status);
+                next(err);
+                operationFailed = true;
+                break;
+            }
+          });
+
+          let summonerId = "";
+          let riotAccountId = "";
+
+          if(operationFailed){
+            console.log("Aborting entire upsert-riot identifiers operation during RiotPUUID update.");
+            break;
+          }
+
+          if(riotPUUID){
+            await riotHttpClient.get(process.env.RIOT_BASE_URL + "/summoner/v4/summoners/by-puuid/" + riotPUUID).then(res => {
+              switch(res.status){
+                case 200:
+                  summonerId = res.data.id;
+                  riotAccountId = res.data.accountId;
+                  break;
+                default:
+                  console.log("by-puuid call with RiotPUUID: " + riotPUUID + ", Unhandled Status: " + res.status);
+              }
+            }).catch(err => {
+              switch(err.response.status){
+                case 404:
+                  console.log("by-puuid call with RiotPUUID: " + riotPUUID + " does not exist.");
+                  break;
+                default:
+                  console.log("by-puuid call with RiotPUUID: " + riotPUUID + " failed with following status: " + err.response.status);
+                  next(err);
+                  operationFailed = true;
+                  break;
+              }
+            });
+
+            if(operationFailed){
+              console.log("Aborting entire upsert-riot identifiers operation during SummonerId & RiotAccountId update.");
+              break;
+            }
+
+            if(summonerId && riotAccountId){
               await memberModel.updateOne({
-                _id: newMember._id
+                _id: member._id
               },{
                 $set: {
-                  note: applicant.note,
-                  updatedAt: currentDate
+                  riotPUUID: riotPUUID,
+                  riotAccountId: riotAccountId,
+                  summonerId: summonerId
                 }
-              });
-  
-              await applicationModel.updateOne({
-                _id: applicant._id
               },{
-                $set: {
-                  dataTransferred: true,
-                  updatedAt: currentDate
-                }
+                upsert: true
+              }).then(() => {
+                console.log("Riot identifiers successfully updated for RiotGameName: " + member.riotGameName);
+              }).catch(err => {
+                console.log("Riot identifiers DB update for RiotGameName: " + member.riotGameName + " failed with following reason.");
+                next(err);
+                operationFailed = true;
               });
-  
-              console.log("Applicant: " + applicant.inGameName + " had matching discord profile and was updated with application information.");
             }
           }
         }
       }
-      
-      res.status(200).send("Application matching complete.");
+    
+      console.log("Upsert riot identifiers operation is complete.");
+      upsertOperation = false;
     }
-  } catch(e){
-    console.log("Aborting application match operation.");
-    e.trace = "Application match operation";
+  } catch(e) {
+    e.trace = "Upsert-riot-identifiers operation";
     next(e);
   }
 })
