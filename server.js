@@ -41,6 +41,7 @@ app.use("/application", applicationRoute);
 
 // Default error handler
 app.use((err, req, res, next) => {
+  console.error(err);
   if(err && err.response && err.response.status && err.response.data){
     if(err.trace){
       res.status(err.response.status).send("Error reason: " + err.response.data.error + "\n" + "Trace: " + err.trace);

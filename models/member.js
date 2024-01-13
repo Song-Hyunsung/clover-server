@@ -6,15 +6,14 @@ const memberSchema = new mongoose.Schema({
   name: String,
   roles: [String],
   tag: String,
-  inGameName: String,
   memberType: String,
-  hasCRPrefix: Boolean,
   summonerId: String,
   riotAccountId: String,
   riotPUUID: String,
   riotGameName: String,
   riotTagLine: String,
-  active: Boolean,
+  active: Boolean, // active refers to presence in Discord server
+  longTermAfk: Boolean,
   ranks: Object,
   note: {
     joinReason: String,
