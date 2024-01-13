@@ -12,7 +12,8 @@ const memberSchema = new mongoose.Schema({
   riotPUUID: String,
   riotGameName: String,
   riotTagLine: String,
-  active: Boolean,
+  active: Boolean, // active refers to presence in Discord server
+  longTermAfk: Boolean,
   ranks: Object,
   note: {
     joinReason: String,

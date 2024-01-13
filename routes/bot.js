@@ -50,6 +50,7 @@ router.route("/upsert-members").get(async (req, res, next) => {
       for(const member of members){
         const roles = [];
         let memberType = "GUEST";
+        let longTermAfk = false;
 
         member.roles.cache.forEach(role => {
           roles.push(role.name);
@@ -58,6 +59,9 @@ router.route("/upsert-members").get(async (req, res, next) => {
           }
           if(role.name === "정멤" || role.name === "CR 운영진" || role.name === "장기 잠수"){
             memberType = "MEMBER";
+            if(role.name === "장기 잠수"){
+              longTermAfk = true;
+            }
           }
         });
 
@@ -87,6 +91,7 @@ router.route("/upsert-members").get(async (req, res, next) => {
             memberType: memberType,
             riotGameName: riotGameName,
             active: true,
+            longTermAfk: longTermAfk,
             createdAt: member.user.createdAt,
             joinedAt: member.joinedAt,
             updatedAt: new Date()
@@ -147,6 +152,7 @@ router.route("/upsert-riot-identifiers").get(async (req, res, next) => {
       memberList = await memberModel.find({
         active: true,
         memberType: "MEMBER",
+        longTermAfk: false,
         riotPUUID: {$exists: false}
       });
 
@@ -251,64 +257,15 @@ router.route("/upsert-tier").get(async (req, res, next) => {
       upsertOperation = true;
       res.send("Upsert tier operation started.");
       memberList = await memberModel.find({
-        hasCRPrefix: true
+        active: true,
+        memberType: "MEMBER",
+        longTermAfk: false,
+        summonerId: {$exists : true}
       });
     
       for(let member of memberList){
         let operationFailed = false;
         let summonerId = member.summonerId;
-        let riotAccountId = member.riotAccountId;
-        let riotPUUID = member.PUUID;
-        if(!summonerId || !riotAccountId || !riotPUUID){
-          await riotHttpClient.get(process.env.RIOT_BASE_URL + "/summoner/v4/summoners/by-name/" + member.inGameName).then(res => {
-            switch(res.status){
-              case 200:
-                summonerId = res.data.id;
-                riotAccountId = res.data.accountId;
-                riotPUUID = res.data.puuid;
-                break;
-              default:
-                console.log("by-name call with IGN: " + member.inGameName + ", Discord: " + member.tag + ", Unhandled Status: " + res.status);
-            }
-          }).catch(err => {
-            switch(err.response.status){
-              case 404:
-                console.log("by-name call with IGN: " + member.inGameName + ", Discord: " + member.tag + " does not exist.");
-                break;
-              default:
-                console.log("by-name call with IGN: " + member.inGameName + ", Discord: " + member.tag + " failed with following status: " + err.response.status);
-                next(err);
-                operationFailed = true;
-                break;
-            }
-          });
-      
-          if(summonerId){
-            await memberModel.updateOne({
-              _id: member._id
-            },{
-              $set: {
-                summonerId: summonerId,
-                riotAccountId: riotAccountId,
-                riotPUUID: riotPUUID
-              }
-            },{
-              upsert: true
-            }).then(() => {
-              console.log("SummonerId successfully updated for " + member.inGameName + ", Discord: " + member.tag);
-            }).catch(err => {
-              console.log("SummonerId DB update for IGN: " + member.inGameName + ", Discord: " + member.tag + " failed with following reason.");
-              next(err);
-              operationFailed = true;
-            });
-          }
-          
-          if(operationFailed){
-            console.log("Aborting entire upsert-tier operation during summonerId update.");
-            break;
-          }
-        }
-
         let rankInfoObj = {};
 
         if(summonerId){
@@ -332,15 +289,15 @@ router.route("/upsert-tier").get(async (req, res, next) => {
                 }
                 break;
               default:
-                console.log("by-summoner call with IGN: " + member.inGameName + ", Discord: " + member.tag + ", Unhandled Status: " + res.status);
+                console.log("by-summoner call with IGN: " + member.riotGameName + ", Discord: " + member.tag + ", Unhandled Status: " + res.status);
             }
           }).catch(err => {
             switch(err.response.status){
               case 404:
-                console.log("by-summoner call with IGN: " + member.inGameName + ", Discord: " + member.tag + " does not exist.");
+                console.log("by-summoner call with IGN: " + member.riotGameName + ", Discord: " + member.tag + " does not exist.");
                 break;
               default:
-                console.log("by-summoner call with IGN: " + member.inGameName + ", Discord: " + member.tag + " failed with following status: " + err.response.status);
+                console.log("by-summoner call with IGN: " + member.riotGameName + ", Discord: " + member.tag + " failed with following status: " + err.response.status);
                 next(err);
                 operationFailed = true;
                 break;
@@ -366,9 +323,9 @@ router.route("/upsert-tier").get(async (req, res, next) => {
             },{
               upsert: true
             }).then(() => {
-              console.log("Ranks successfully updated for " + member.inGameName + ", Discord: " + member.tag);
+              console.log("Ranks successfully updated for " + member.riotGameName + ", Discord: " + member.tag);
             }).catch(err => {
-              console.log("Ranks DB update for IGN: " + member.inGameName + ", Discord: " + member.tag + " failed with following reason.");
+              console.log("Ranks DB update for IGN: " + member.riotGameName + ", Discord: " + member.tag + " failed with following reason.");
               next(err);
               operationFailed = true;
             });
